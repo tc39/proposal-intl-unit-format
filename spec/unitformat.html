@@ -1,0 +1,329 @@
+<emu-clause id="unitformat-objects">
+  <h1>UnitFormat Objects</h1>
+
+  <emu-clause id="sec-intl-unitformat-abstracts">
+    <h1>Abstract Operations for UnitFormat Objects</h1>
+
+    <emu-clause id="sec-InitializeUnitFormat" aoid="InitializeUnitFormat">
+      <h1>InitializeUnitFormat (unitFormat, locales, options)</h1>
+
+      <p>
+        The abstract operation InitializeUnitFormat accepts the arguments _unitFormat_ (which must be an object), _locales_, and _options_. It initializes _unitFormat_ as a UnitFormat object. It performs the following steps:
+      </p>
+
+      <emu-alg>
+        1. If _unitFormat_.[[initializedIntlObject]] is *true*, throw a *TypeError* exception.
+        1. Set _unitFormat_.[[initializedIntlObject]] to *true*.
+        1. Let _requestedLocales_ be ? CanonicalizeLocaleList(_locales_).
+        1. If _options_ is *undefined*, then
+          1. Let _options_ be ObjectCreate(*%ObjectPrototype%*).
+        1. Else
+          1. Let _options_ be ToObject(_options_).
+        1. Let _opt_ be a new Record.
+        1. Let _u_ be GetOption(_options_, *"unit"*, *"string"*, «*"bestFit"*, *"second"*, *"minute"*, *"hour"*, *"day"*, *"month"*, *"year"*, *"byte"*, *"kilobyte"*, *"megabyte"*, *"gigabyte"*, *"terabyte"*», *"bestFit"*).
+        1. If _u_ is not *"bestFit"*, then
+          1. Let _t_ be GetUnitFormatGroupName(_u_).
+        1. Else,
+          1. Let _t_ be GetOption(_options_, *"type"*, *"string"*, «*"regular"*, *"unit"*», *"regular"*).
+        1. Set _unitFormat_.[[unit]] to _u_.
+        1. Set _unitFormat_.[[type]] to _t_.
+        1. Let _s_ be GetOption(_options_, *"style"*, *"string"*, «*"long"*, *"short"*, *"narrow"*, *"long"*).
+        1. Set _unitFormat_.[[style]] to _s_.
+        1. Let _localeData_ be *%UnitFormat%*.[[localeData]].
+        1. Let _r_ be ResolveLocale(*%UnitFormat%*.[[availableLocales]], _requestedLocales_, _opt_, *%UnitFormat%*.[[relevantExtensionKeys]], _localeData_).
+        1. Let _dataLocale_ be _r_.[[dataLocale]].
+        1. Let _dataLocaleData_ be Get(_localeData_, _dataLocale_).
+        1. Let _pattern_ be GetPattern(_dataLocaleData_, _t_, _u_, _s_).
+        1. Set _unitFormat_.[[pattern]] to be the value of _pattern_.
+        1. Set _unitFormat_.[[locale]] to the value of _r_.[[locale]].
+        1. Set _unitFormat_.[[initializedUnitFormat]] to *true*.
+        1. Return _unitFormat_.
+      </emu-alg>
+
+    </emu-clause>
+
+    <emu-clause id="sec-deconstructpattern" aoid="DeconstructPattern">
+      <h1>DeconstructPattern (pattern, placeables)</h1>
+
+      <p>
+        The *DeconstructPattern* abstract operation is called with arguments _pattern_ (which must be a String) and _placeables_ (which must be an Object), and deconstructts the pattern string into a list of parts.
+        Example:
+        <pre>
+        Input:
+          DeconstructPattern("AA{xx}BB{yy}CC", {
+            xx: {type: 'hour', value: '15'},
+            yy: {type: 'minute', value: '06'}
+          });
+
+        Output:
+          [
+            {type: 'literal', value: 'AA'},
+            {type: 'hour', value: '15'},
+            {type: 'literal', value: 'BB'},
+            {type: 'minute', value: '06'},
+            {type: 'literal', value: 'CC'}
+          ]
+        </pre>
+      </p>
+      <emu-alg>
+        1. Set _parts_ to be the result of _pattern_.split(//).
+        1. Let _result_ be ArrayCreate(0).
+
+        1. Set _i_ to be *0*.
+        1. Repeat, while _i_ &lt; _parts_.length
+          1. Set _part_ to be _parts_.[_i_].
+          1. If _i_ % 2 is *0*, then
+            1. If _part_.length is &gt; *0*, then
+              1. _result_.push({type: 'literal', value: part}).
+          1. Else,
+            1. Set _subst_ to _placeables_.[_part_].
+            1. If !subst, then
+              1. Throw new Error.
+            1. If Array.isArray(_subst_), then
+              1. result.push(...subst).
+            1. Else,
+              1. result.push(_subst_).
+        1. Return _result_.
+      </emu-alg>
+    </emu-clause>
+
+    <emu-clause id="sec-createpartsfrompattern" aoid="CreatePartsFromPattern">
+      <h1>CreatePartsFromPattern (unitFormat, value)</h1>
+
+      <p>
+        The *CreatePartsFromPattern* abstract operation is called with arguments _unitFormat_ (which must be an object initialized as a UnitFormat) and _value_ (which must be a Number), and creates the corresponding parts according to the effective locale and the formatting options of _unitFormat_. The following steps are taken:
+      </p>
+
+      <emu-alg>
+        1. Let _p_ be ObjectCreate(*%ObjectPrototype%*).
+        1. Set _p_.["0"] to be new Object { "type": "value", "value": value }.
+        1. Return the result of DeconstructPattern(unitFormat.[[pattern]], _p_).
+      </emu-alg>
+    </emu-clause>
+
+    <emu-clause id="sec-formatunit" aoid="FormatUnit">
+      <h1>FormatUnit(unitFormat, value)</h1>
+
+      <p>
+        The FormatUnit abstract operation is called with arguments _unitFormat_ (which must be an object initialized as a UnitFormat) and _list_ (which must be an Array), and performs the following steps:
+      </p>
+
+      <emu-alg>
+        1. Let _parts_ be ? CreatePartsFromPattern(_unitFormat_, _value_).
+        1. Let _result_ be an empty String.
+        1. For each _part_ in _parts_, do:
+          1. Set _result_ to a String value produced by concatenating _result_ and _part_.[[value]].
+        1. Return _result_.
+      </emu-alg>
+
+    </emu-clause>
+
+    <emu-clause id="sec-formatunittoparts" aoid="FormatUnitToParts">
+      <h1>FormatUnitToParts(unitFormat, value)</h1>
+
+      <p>
+        The FormatUnitToParts abstract operation is called with arguments _unitFormat_ (which must be an object initialized as a UnitFormat) and _value_ (which must be a Number), and performs the following steps:
+      </p>
+
+      <emu-alg>
+        1. Let _parts_ be ? CreatePartsFromPattern(_unitFormat_, _value_).
+        1. Let _result_ be ArrayCreate(0).
+        1. Let _n_ be 0.
+        1. For each _part_ in _parts_, do:
+          1. Let _O_ be ObjectCreate(%ObjectPrototype%).
+          1. Perform ? CreateDataPropertyOrThrow(_O_, "type", _part_.[[type]]).
+          1. Perform ? CreateDataPropertyOrThrow(_O_, "value", _part_.[[value]]).
+          1. Perform ? CreateDataProperty(_result_, ? ToString(_n_), _O_).
+          1. Increment _n_ by 1.
+        1. Return _result_.
+      </emu-alg>
+
+    </emu-clause>
+  </emu-clause>
+
+  <emu-clause id="sec-intl-unitformat-constructor">
+    <h1>The Intl.UnitFormat Constructor</h1>
+
+    <p>
+      The UnitFormat constructor is a standard built-in property of the Intl object. Behaviour common to all service constructor properties of the Intl object is specified in <emu-xref href="#sec-internal-slots"></emu-xref>.
+    </p>
+
+
+    <emu-clause id="sec-Intl.UnitFormat">
+      <h1>Intl.UnitFormat([ locales [, options]])</h1>
+
+      <p>
+        When the *Intl.UnitFormat* function is called with optional arguments the following steps are taken:
+      </p>
+
+      <emu-alg>
+        1. If NewTarget is *undefined*, let _newTarget_ be the active function object, else let _newTarget_ be NewTarget.
+        1. Let _unitFormat_ be OrdinaryCreateFromConstructor(_newTarget_, *%UnitFormatPrototype%*).
+        1. Return InitializeUnitFormat(_unitFormat_, _locales_, _options_).
+      </emu-alg>
+    </emu-clause>
+  </emu-clause>
+
+  <emu-clause id="sec-properties-of-intl-unitformat-constructor">
+    <h1>Properties of the Intl.UnitFormat Constructor</h1>
+
+    <p>
+      The Intl.UnitFormat constructor has the following properties:
+    </p>
+
+    <emu-clause id="sec-Intl.UnitFormat.prototype">
+      <h1>Intl.UnitFormat.prototype</h1>
+
+      <p>
+        The value of *Intl.UnitFormat.prototype* is *%UnitFormatPrototype%*.
+      </p>
+      <p>
+        This property has the attributes { [[Writable]]: *false*, [[Enumerable]]: *false*, [[Configurable]]: *false* }.
+      </p>
+    </emu-clause>
+
+    <emu-clause id="sec-Intl.UnitFormat.supportedLocalesOf">
+      <h1>Intl.UnitFormat.supportedLocalesOf (locales [, options ])</h1>
+
+      <p>
+        When the *supportedLocalesOf* method of *%UnitFormat%* is called, the following steps are taken:
+      </p>
+
+      <emu-alg>
+        1. Let _availableLocales_ be *%UnitFormat%*.[[availableLocales]].
+        1. Let _requestedLocales_ be CanonicalizeLocaleList(_locales_).
+        1. Return SupportedLocales(_availableLocales_, _requestedLocales_, _options_).
+      </emu-alg>
+
+      <p>
+        The value of the *length* property of the *supportedLocalesOf* method is 1.
+      </p>
+    </emu-clause>
+
+    <emu-clause id="sec-Intl.UnitFormat-internal-slots">
+      <h1>Internal slots</h1>
+
+      <p>
+        The value of the [[relevantExtensionKeys]] internal slot is [].
+      </p>
+
+      <p>
+        The value of the [[availableLocales]] internal slot is implementation defined within the constraints described in <emu-xref href="#sec-internal-slots"></emu-xref>.
+      </p>
+
+      <p>
+        The value of the [[localeData]] internal slot is implementation defined within the constraints described in <emu-xref href="#sec-internal-slots"></emu-xref> and the following additional constraints:
+      </p>
+
+      <ul>
+        <li>[[localeData]][locale] must have a formats property for all locale values. The value of this property must be an object, which must have properties with the names of the two list formatting types: *"regular"* and *"unit"*. Each object must have properties with the names of three formatting styles: *"long"*, *"short"* and *"narrow"*. Each of those properties must be objects themselves, and each must have properties with names of templates: *"2"*, *"start"*, *"middle"* and *"end*. Each of those properties must be a template string as specified in LDML List Format Rules.</li>
+      </ul>
+
+      <emu-note>
+        It is recommended that implementations use the locale data provided by the Common Locale Data Repository (available at <a href="http://cldr.unicode.org/">http://cldr.unicode.org/</a>).
+      </emu-note>
+    </emu-clause>
+  </emu-clause>
+
+  <emu-clause id="sec-properties-of-intl-unitformat-prototype-object">
+    <h1>Properties of the Intl.UnitFormat Prototype Object</h1>
+
+    <p>
+      The Intl.UnitFormat prototype object is itself an Intl.UnitFormat instance as specified in <emu-xref href="#sec-properties-of-intl-unitformat-instances"></emu-xref>, whose internal slots are set as if it had been constructed by the expression Construct(*%UnitFormat%*).
+    </p>
+    <p>
+      In the following descriptions of functions that are properties or [[Get]] attributes of properties of *%UnitFormatPrototype%*, the phrase "this UnitFormat object" refers to the object that is the this  value for the invocation of the function; a *TypeError* exception is thrown if the this value is not an object or an object that does not have an [[initializedUnitFormat]] internal slot with value *true*.
+    </p>
+
+    <emu-clause id="sec-Intl.UnitFormat.prototype.constructor">
+      <h1>Intl.UnitFormat.prototype.constructor</h1>
+
+      <p>
+        The initial value of *Intl.UnitFormat.prototype.constructor* is *%UnitFormat%*.
+      </p>
+    </emu-clause>
+
+    <emu-clause id="sec-Intl.UnitFormat.prototype-@@tostringtag">
+      <h1>Intl.UnitFormat.prototype[ @@toStringTag ]</h1>
+
+      <p>
+        The initial value of the @@toStringTag property is the string value *"Object"*.
+      </p>
+      <p>
+        This property has the attributes { [[Writable]]: *false*, [[Enumerable]]: *false*, [[Configurable]]: *true* }.
+      </p>
+    </emu-clause>
+
+    <emu-clause id="sec-Intl.UnitFormat.prototype.format">
+      <h1>Intl.UnitFormat.prototype.format ([ value ])</h1>
+
+      <p>
+        Intl.UnitFormat.prototype.format is an accessor property whose set accessor function is *undefined*. Its get accessor function performs the following steps:
+      </p>
+
+      <emu-alg>
+        1. Let _uf_ be *this* value.
+        1. Assert: Type(_uf_) is Object and _uf_ has an [[initializedUnitFormat]] internal slot whose value is *true*.
+        1. If _value_ is not provided or is *undefined*, then
+          1. Let _value_ be *0*.
+        1. Else,
+          1. Let _value_ be ? ToNumber(_value_).
+        1. Return ? FormatUnit(_uf_, _value_).
+      </emu-alg>
+    </emu-clause>
+
+    <emu-clause id="sec-Intl.UnitFormat.prototype.formatToParts">
+      <h1>Intl.UnitFormat.prototype.formatToParts ([ value ])</h1>
+
+      <p>
+        Intl.UnitFormat.prototype.format is an accessor property whose set accessor function is *undefined*. Its get accessor function performs the following steps:
+      </p>
+
+      <emu-alg>
+        1. Let _uf_ be *this* value.
+        1. Assert: Type(_uf_) is Object and _uf_ has an [[initializedUnitFormat]] internal slot whose value is *true*.
+        1. If _value_ is not provided or is *undefined*, then
+          1. Let _value_ be *0*.
+        1. Else,
+          1. Let _value_ be ? ToNumber(_value_).
+        1. Return ? FormatUnitToParts(_uf_, _value_).
+      </emu-alg>
+    </emu-clause>
+
+    <emu-clause id="sec-Intl.UnitFormat.prototype.resolvedOptions">
+      <h1>Intl.UnitFormat.prototype.resolvedOptions ()</h1>
+
+      <p>
+        This function provides access to the locale and options computed during initialization of the object.
+      </p>
+      <p>
+        The function returns a new object whose properties and attributes are set as if constructed by an object literal assigning to each of the following properties the value of the corresponding internal slot of this UnitFormat object (see <emu-xref href="#sec-properties-of-intl-unitformat-instances"></emu-xref>): locale and style. Properties whose corresponding internal slots are not present are not assigned.
+      </p>
+    </emu-clause>
+  </emu-clause>
+
+  <emu-clause id="sec-properties-of-intl-unitformat-instances">
+    <h1>Properties of Intl.UnitFormat Instances</h1>
+
+    <p>
+      Intl.UnitFormat instances inherit properties from *%UnitFormatPrototype%*.
+    </p>
+
+    <p>
+      Intl.UnitFormat instances and other objects that have been successfully initialized as a UnitFormat have [[initializedIntlObject]] and [[initializedUnitFormat]] internal slots whose values are *true*.
+    </p>
+
+    <p>
+      Objects that have been successfully initialized as a UnitFormat object also have several internal slots that are computed by the constructor:
+    </p>
+
+    <ul>
+      <li>[[locale]] is a String value with the language tag of the locale whose localization is used by the list format styles.</li>
+      <li>[[style]] is one of the String values *"regular"*, *"duration"*, *"duration-short"*, *"duration-narrow"*, *"unit"* or *"number"*, identifying the list formatting style used.</li>
+    </ul>
+
+    <p>
+      Finally, objects that have been successfully initialized as a UnitFormat have a [[boundResolve]] internal slot that caches the function returned by the format accessor (<emu-xref href="#sec-Intl.UnitFormat.prototype.format"></emu-xref>).
+    </p>
+  </emu-clause>
+</emu-clause>
