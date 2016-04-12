@@ -1,4 +1,4 @@
-## Intl.ListFormat API Specification [draft]
+## Intl.UnitFormat API Specification [draft]
 
 ### Status
 
@@ -6,13 +6,12 @@ __Stage 1__
 
 Implementation Progress
 
- * Polyfill: https://github.com/zbraniecki/IntlListFormat
+ * Polyfill: https://github.com/zbraniecki/IntlUnitFormat
 
 Backpointers
 
-* https://github.com/tc39/ecma402/issues/33
-* http://cldr.unicode.org/translation/lists
-* http://unicode.org/reports/tr35/tr35-general.html#ListPatterns
+* https://github.com/tc39/ecma402/issues/32
+* http://cldr.unicode.org/translation/units
 
 ### Authors
 
@@ -33,10 +32,12 @@ This proposal is based on the LDML spec, List Patterns:
 ### Usage
 
 ```javascript
-let o = new Intl.ListFormat("en", {
-    style: "regular" // default style
+let o = new Intl.UnitFormat("en", {
+    type: "duration",
+    unit: "hour",
+    style: "long" // default style
 });
-console.log(o.format(['foo', 'bar', 'baz']); // "foo, bar, and baz"
+console.log(o.format(15)); // "15 hours"
 ```
 
 ### Render Spec
