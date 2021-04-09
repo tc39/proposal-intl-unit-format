@@ -1,5 +1,7 @@
 ## Intl.UnitFormat API Specification [draft]
 
+![Stage 1](https://badges.aleen42.com/src/tc39_2.svg)
+
 ### Status
 
 __Stage 1__
