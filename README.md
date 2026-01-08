@@ -1,3 +1,5 @@
+# [DEPRECATED IN FAVOR OF [`Unified Intl.NumberFormat`](https://github.com/tc39/proposal-unified-intl-numberformat?tab=readme-ov-file#i-units)]
+
 ## Intl.UnitFormat API Specification [draft]
 
 ### Status
