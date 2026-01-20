@@ -4,7 +4,7 @@
 
 ### Status
 
-__Withdrawn at the 2026 Jaunary plenary meeting, due to deprecation__
+__Withdrawn at the 2026 January plenary meeting, due to deprecation__
 
 Implementation Progress
 
